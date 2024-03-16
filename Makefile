@@ -6,13 +6,14 @@ rust:
 	cargo build 
 # should be test: jvm but test fail then
 # no time to investigate
-test: 
+test:
+#cd java && mvn package
 	cargo test
 jvm:
-	cd java && mvn package -DskipTests
+	cd java && mvn package
 test-jvm:
 	cd java && mvn test
-
-clean:
+clean-jvm:
 	cd java && mvn clean
+clean: clean-jvm
 	cargo clean
