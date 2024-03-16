@@ -1,0 +1,23 @@
+[package]
+name = "adhesive"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+jni = { version = "0.21.1", features = ["invocation"] }
+thiserror = { version = "1.0"}
+log = { version = "0.4" }
+arrow = { version = "50", features = ["ffi"]}
+regex = { version = "1.10" }
+random-string = "1.0"
+once_cell = "1.19"
+
+tokio = { version = "^1.36", features = ["rt-multi-thread"]}
+datafusion = { git = "https://github.com/apache/arrow-datafusion.git", rev="451d13a" }
+async-trait = { version = "0.1" }
+
+[dev-dependencies]
+ctor = { version = "0.2"}
+env_logger = { version = "0.11" }

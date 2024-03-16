@@ -1,0 +1,211 @@
+use std::sync::Arc;
+
+use arrow::{array::ArrayRef, datatypes::DataType};
+use datafusion::{
+    common::exec_err,
+    execution::{
+        config::SessionConfig,
+        context::{FunctionFactory, RegisterFunction},
+    },
+    logical_expr::{
+        ColumnarValue, CreateFunction, DefinitionStatement, ScalarUDF, ScalarUDFImpl, Signature,
+        Volatility,
+    },
+};
+
+use crate::{
+    jvm::{JvmFunction, JvmFunctionFactory},
+    JvmFunctionError,
+};
+use datafusion::error::{DataFusionError, Result};
+
+#[async_trait::async_trait]
+impl FunctionFactory for JvmFunctionFactory {
+    async fn create(
+        &self,
+        _state: &SessionConfig,
+        statement: CreateFunction,
+    ) -> Result<RegisterFunction> {
+        let return_type = statement.return_type.expect("return type expected");
+        let method_name = Self::return_type_to_method_name(&return_type)?;
+
+        let language = statement
+            .params
+            .language
+            .map(|i| i.value.to_lowercase())
+            .unwrap_or("java".to_string());
+
+        let jvm_function = match (&statement.params.as_, language.as_str()) {
+            (Some(DefinitionStatement::SingleQuotedDef(java_code)), "java") => {
+                self.compile_create_function(java_code, &method_name)?
+            }
+            (Some(DefinitionStatement::SingleQuotedDef(class_name)), "class") => {
+                self.create_function(class_name, &method_name)?
+            }
+
+            // Double dollar def does not work.
+            // It was intended to use for java code definition
+            // Some(DefinitionStatement::DoubleDollarDef(java_code)) => {
+            //     self.create_function(&class_name, &method_name)?
+            // }
+            _ => exec_err!("class name or class definition should be provided")?,
+        };
+
+        let argument_types = statement
+            .args
+            .map(|args| {
+                args.into_iter()
+                    .map(|a| a.data_type)
+                    .collect::<Vec<DataType>>()
+            })
+            .unwrap_or_default();
+
+        let f = JvmFunctionWrapper {
+            name: statement.name,
+            argument_types: argument_types.clone(),
+            signature: Signature::exact(argument_types, Volatility::Volatile),
+            return_type,
+            inner: jvm_function,
+        };
+
+        Ok(RegisterFunction::Scalar(Arc::new(ScalarUDF::from(f))))
+    }
+}
+
+impl JvmFunctionFactory {
+    fn return_type_to_method_name(return_type: &DataType) -> Result<String> {
+        let method_name = match return_type {
+            DataType::Int64 => "computeBigInt",
+            _ => exec_err!("type not supported (to be added)")?,
+        };
+
+        Ok(method_name.into())
+    }
+}
+
+#[derive(Debug)]
+struct JvmFunctionWrapper {
+    name: String,
+    argument_types: Vec<DataType>,
+    signature: Signature,
+    return_type: DataType,
+    inner: JvmFunction,
+}
+
+impl ScalarUDFImpl for JvmFunctionWrapper {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn signature(&self) -> &datafusion::logical_expr::Signature {
+        &self.signature
+    }
+
+    fn return_type(
+        &self,
+        _arg_types: &[arrow::datatypes::DataType],
+    ) -> Result<arrow::datatypes::DataType> {
+        Ok(self.return_type.clone())
+    }
+
+    fn invoke(
+        &self,
+        args: &[datafusion::logical_expr::ColumnarValue],
+    ) -> Result<datafusion::logical_expr::ColumnarValue> {
+        let arrays = ColumnarValue::values_to_arrays(args)?;
+        let array = JvmFunction::create_arrow_data(&self.argument_types, &arrays)?;
+
+        let result = self.inner.invoke_java(array)?;
+
+        Ok(ColumnarValue::from(result as ArrayRef))
+    }
+}
+
+impl From<JvmFunctionError> for DataFusionError {
+    fn from(error: JvmFunctionError) -> Self {
+        DataFusionError::Execution(error.to_string())
+    }
+}
+#[cfg(test)]
+mod test {
+    use std::sync::Arc;
+
+    use crate::JvmFunctionFactory;
+    use arrow::array::{ArrayRef, Int64Array, RecordBatch};
+    use datafusion::{assert_batches_eq, execution::context::SessionContext};
+
+    const JAR_PATH: &str = "java/target/adhesive-jar-with-dependencies.jar";
+
+    #[tokio::test]
+    async fn should_invoke_java() -> datafusion::error::Result<()> {
+        let ctx = SessionContext::new()
+            // register custom function factory
+            .with_function_factory(Arc::new(JvmFunctionFactory::new_with_jar(JAR_PATH)?));
+
+        let a: ArrayRef = Arc::new(Int64Array::from(vec![1, 2, 3, 4]));
+        let b: ArrayRef = Arc::new(Int64Array::from(vec![10, 20, 30, 40]));
+        let batch = RecordBatch::try_from_iter(vec![("a", a), ("b", b)])?;
+
+        ctx.register_batch("t", batch)?;
+
+        let sql = r#"
+        CREATE FUNCTION f1(BIGINT, BIGINT)
+        RETURNS BIGINT
+        LANGUAGE JAVA
+        AS '
+        public class NewClass extends com.github.milenkovicm.adhesive.Adhesive {
+            @Override
+            public Long compute(org.apache.arrow.vector.table.Row row) {
+                return row.getBigInt(0) * row.getBigInt(1); 
+            }
+        }
+        '
+        "#;
+
+        ctx.sql(sql).await?.show().await?;
+
+        let result = ctx.sql("select f1(a,b) from t").await?.collect().await?;
+
+        let expected = vec![
+            "+-------------+",
+            "| f1(t.a,t.b) |",
+            "+-------------+",
+            "| 10          |",
+            "| 40          |",
+            "| 90          |",
+            "| 160         |",
+            "+-------------+",
+        ];
+        assert_batches_eq!(expected, &result);
+
+        // note change in language
+        let sql = r#"
+        CREATE FUNCTION f2(BIGINT, BIGINT)
+        RETURNS BIGINT
+        LANGUAGE CLASS
+        AS "com.github.milenkovicm.adhesive.example.BasicExample"
+        "#;
+
+        ctx.sql(sql).await?.show().await?;
+
+        let result = ctx.sql("select f2(a,b) from t").await?.collect().await?;
+
+        let expected = vec![
+            "+-------------+",
+            "| f2(t.a,t.b) |",
+            "+-------------+",
+            "| 11          |",
+            "| 22          |",
+            "| 33          |",
+            "| 44          |",
+            "+-------------+",
+        ];
+        assert_batches_eq!(expected, &result);
+
+        Ok(())
+    }
+}
