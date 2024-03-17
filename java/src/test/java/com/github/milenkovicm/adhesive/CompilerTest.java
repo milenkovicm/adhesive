@@ -1,6 +1,6 @@
 package com.github.milenkovicm.adhesive;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,5 +28,19 @@ public class CompilerTest {
 
     assertNotNull(instance);
     instance.compute(null);
+  }
+
+  @Test()
+  public void basicFailCompileTest() throws Exception {
+
+    var compiler = new Compiler();
+
+    var exception =
+        assertThrows(
+            InstantiationException.class,
+            // we break FQN to fail compilation
+            () -> compiler.compile("com.github.milenkovicm.newclass.NewClass1", sourceCode));
+
+    assertEquals("Can't compile function", exception.getMessage());
   }
 }
