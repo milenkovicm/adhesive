@@ -167,6 +167,11 @@ impl JvmFunctionFactory {
 #[derive(Debug)]
 pub(crate) struct JvmFunction {
     target_method_id: JMethodID,
+
+    // TODO: WARN  jni::wrapper::objects::global_ref] Dropping a GlobalRef in a detached thread. 
+    // Fix your code if this message appears frequently (see the GlobalRef docs).
+    //
+    // checking current Drop impl for GlobalRef it would do same thing I'll do 
     target_object_global_ref: GlobalRef,
     jvm: Arc<JavaVM>,
 }
