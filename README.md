@@ -58,8 +58,8 @@ SELECT f2(a,b) FROM t
 ## Setup
 
 ```rust
-    // JAR containing required libraries and additional classes 
-    const JAR_PATH: &str ="adhesive-1.0-jar-with-dependencies.jar";
-    let ctx = SessionContext::new()
-        .with_function_factory(Arc::new(JvmFunctionFactory::new_with_jar(JAR_PATH)?));
+// JAR containing required libraries and additional classes 
+const JAR_PATH: &str ="adhesive-1.0-jar-with-dependencies.jar";
+let ctx = SessionContext::new()
+    .with_function_factory(Arc::new(JvmFunctionFactory::new_with_jar(JAR_PATH)?));
 ```
