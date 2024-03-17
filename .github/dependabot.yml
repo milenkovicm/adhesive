@@ -9,8 +9,6 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
-    # ignore:
-      # - dependency-name: "arrow"
     # group of dependencies to be updated together 
     groups:
       # all datafusion deps should be updated together
@@ -19,3 +17,11 @@ updates:
         patterns:
           - "datafusion*" 
           - "datafusion-*" 
+  - package-ecosystem: "maven"
+    directory: "/java"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
