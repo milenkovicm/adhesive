@@ -23,3 +23,10 @@ pub enum JvmFunctionError {
     #[error("Java code error: {0}")]
     JavaCodeError(String),
 }
+
+#[cfg(test)]
+#[ctor::ctor]
+fn init() {
+    // Enable RUST_LOG logging configuration for test
+    let _ = env_logger::builder().is_test(true).try_init();
+}
