@@ -46,6 +46,7 @@ impl JvmFunctionFactory {
             // we shut him down for now
             //.option("-Xcheck:jni")
             // TODO: Check if file exist
+            .option("--add-opens=java.base/java.nio=ALL-UNNAMED")
             .option(format!("-Djava.class.path={}", jar_path))
             .build()?;
 
