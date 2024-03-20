@@ -34,7 +34,7 @@ async fn main() -> datafusion::error::Result<()> {
 
     ctx.sql(sql).await?.show().await?;
 
-    ctx.sql("select f1(a,b) from t").await?.show().await?;
+    ctx.sql("select a, b, f1(a,b) from t").await?.show().await?;
 
     // note change in language
     let sql = r#"
@@ -46,7 +46,7 @@ async fn main() -> datafusion::error::Result<()> {
 
     ctx.sql(sql).await?.show().await?;
 
-    ctx.sql("select f2(a,b) from t").await?.show().await?;
+    ctx.sql("select a, b, f2(a,b) from t").await?.show().await?;
 
     Ok(())
 }
