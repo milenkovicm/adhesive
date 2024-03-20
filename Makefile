@@ -6,7 +6,7 @@ rust:
 	cargo build 
 # should be test: jvm but test fail then
 # no time to investigate
-test:
+test: jvm
 #cd java && mvn package
 	cargo test
 jvm:
