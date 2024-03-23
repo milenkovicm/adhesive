@@ -1,9 +1,12 @@
 # Adhesive - Datafusion Integration Nobody Asked For
 
 Is very opinionated datafusion user defined functions written in java.
-It has bee implemented to demonstrate datafusion `FunctionFactory` functionality merge request ([arrow-datafusion/pull#9333](https://github.com/apache/arrow-datafusion/pull/9333)). It has not been envisaged as a actively maintained library.
+It has bee implemented to demonstrate datafusion `FunctionFactory` functionality merge request ([arrow-datafusion/pull#9333](https://github.com/apache/arrow-datafusion/pull/9333)).
 
-## How to use
+> [!NOTE]
+> It has not been envisaged as a actively maintained library.
+
+## How To Use
 
 A java user defined function can be defined using `CREATE FUNCTION`:
 
