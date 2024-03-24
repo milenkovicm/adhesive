@@ -1,10 +1,16 @@
 # Adhesive - Datafusion Integration Nobody Asked For
 
-Is very opinionated datafusion user defined functions written in java.
-It has bee implemented to demonstrate datafusion `FunctionFactory` functionality merge request ([arrow-datafusion/pull#9333](https://github.com/apache/arrow-datafusion/pull/9333)).
+Very opinionated datafusion user defined functions written in java.
+
+It has been implemented to demonstrate DataFusion `FunctionFactory` functionality ([arrow-datafusion/pull#9333](https://github.com/apache/arrow-datafusion/pull/9333)).
 
 > [!NOTE]
 > It has not been envisaged as a actively maintained library.
+>
+Other project utilizing `FunctionFactory`:
+
+- [Torchfusion, Opinionated Torch Inference on DataFusion](https://github.com/milenkovicm/torchfusion)
+- [LightGBM Inference on DataFusion](https://github.com/milenkovicm/lightfusion)
 
 ## How To Use
 
