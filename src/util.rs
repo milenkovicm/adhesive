@@ -13,9 +13,7 @@ fn generate_package_name() -> String {
 fn find_class_name(code: &str) -> Option<String> {
     let re = Regex::new(r"class\s+(?<name>\w+)").unwrap();
 
-    let Some(capture) = re.captures(code) else {
-        return None;
-    };
+    let capture = re.captures(code)?;
 
     Some(capture["name"].to_string())
 }

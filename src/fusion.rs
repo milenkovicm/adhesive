@@ -35,13 +35,19 @@ impl FunctionFactory for JvmFunctionFactory {
             .map(|i| i.value.to_lowercase())
             .unwrap_or("java".to_string());
 
-        let jvm_function = match (&statement.params.as_, language.as_str()) {
-            (Some(DefinitionStatement::SingleQuotedDef(java_code)), "java") => {
-                self.compile_create_function(java_code, &method_name)?
-            }
-            (Some(DefinitionStatement::SingleQuotedDef(class_name)), "class") => {
-                self.create_function(class_name, &method_name)?
-            }
+        let (jvm_function, function_definition) = match (&statement.params.as_, language.as_str()) {
+            (Some(DefinitionStatement::SingleQuotedDef(java_code)), "java") => (
+                self.compile_create_function(java_code, &method_name)?,
+                FunctionDefinition::Java {
+                    class_definition: java_code.to_owned(),
+                },
+            ),
+            (Some(DefinitionStatement::SingleQuotedDef(class_name)), "class") => (
+                self.create_function(class_name, &method_name)?,
+                FunctionDefinition::Fqn {
+                    fqn: class_name.to_owned(),
+                },
+            ),
 
             // Double dollar def does not work.
             // It was intended to use for java code definition
@@ -64,6 +70,7 @@ impl FunctionFactory for JvmFunctionFactory {
             name: statement.name,
             argument_types: argument_types.clone(),
             signature: Signature::exact(argument_types, Volatility::Volatile),
+            function_definition,
             return_type,
             inner: jvm_function,
         };
@@ -89,6 +96,7 @@ struct JvmFunctionWrapper {
     argument_types: Vec<DataType>,
     signature: Signature,
     return_type: DataType,
+    function_definition: FunctionDefinition,
     inner: JvmFunction,
 }
 
@@ -129,4 +137,17 @@ impl From<JvmFunctionError> for DataFusionError {
     fn from(error: JvmFunctionError) -> Self {
         DataFusionError::Execution(error.to_string())
     }
+}
+
+/// Captures how java function has been defined
+
+// To be used later for function serialization
+#[derive(Debug)]
+enum FunctionDefinition {
+    /// Fully qualified class name
+    Fqn { fqn: String },
+    /// Class definition
+    Java { class_definition: String },
+    /// Compiled class definition (byte_code)
+    Class { byte_code: Vec<u8>, fqn: String },
 }
