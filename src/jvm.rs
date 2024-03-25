@@ -1,5 +1,5 @@
 use crate::JvmFunctionError;
-use arrow::{
+use datafusion::arrow::{
     array::{make_array, Array, ArrayData, ArrayDataBuilder, ArrayRef},
     datatypes::{DataType, Field, Fields},
     ffi::{from_ffi, to_ffi, FFI_ArrowArray, FFI_ArrowSchema},
@@ -267,7 +267,7 @@ fn _attach_tread(jvm: &JavaVM) -> std::result::Result<AttachGuard<'_>, jni::erro
 mod test {
 
     use super::{JvmFunction, JvmFunctionFactory};
-    use arrow::{
+    use datafusion::arrow::{
         array::{ArrayData, ArrayRef, Int64Array},
         datatypes::DataType,
     };

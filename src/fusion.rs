@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use arrow::{array::ArrayRef, datatypes::DataType};
+use datafusion::arrow::{array::ArrayRef, datatypes::DataType};
 use datafusion::{
     common::exec_err,
     execution::{
@@ -115,8 +115,8 @@ impl ScalarUDFImpl for JvmFunctionWrapper {
 
     fn return_type(
         &self,
-        _arg_types: &[arrow::datatypes::DataType],
-    ) -> Result<arrow::datatypes::DataType> {
+        _arg_types: &[datafusion::arrow::datatypes::DataType],
+    ) -> Result<datafusion::arrow::datatypes::DataType> {
         Ok(self.return_type.clone())
     }
 

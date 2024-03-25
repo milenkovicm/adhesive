@@ -17,7 +17,7 @@ pub enum JvmFunctionError {
     #[error("JNI error: {0}")]
     JniErrors(#[from] jni::errors::Error),
     #[error("Arrow error: {0}")]
-    ArrowError(#[from] arrow::error::ArrowError),
+    ArrowError(#[from] datafusion::arrow::error::ArrowError),
     #[error("JVM call throw exception: {0}")]
     JvmException(String),
     #[error("Java code error: {0}")]

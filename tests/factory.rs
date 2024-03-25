@@ -3,7 +3,7 @@ mod test {
     use std::sync::Arc;
 
     use adhesive::JvmFunctionFactory;
-    use arrow::array::{ArrayRef, Int64Array, RecordBatch};
+    use datafusion::arrow::array::{ArrayRef, Int64Array, RecordBatch};
     use datafusion::{assert_batches_eq, execution::context::SessionContext};
 
     const JAR_PATH: &str = "java/target/adhesive-jar-with-dependencies.jar";
