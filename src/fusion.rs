@@ -1,12 +1,10 @@
 use std::sync::Arc;
 
 use datafusion::arrow::{array::ArrayRef, datatypes::DataType};
+use datafusion::execution::context::SessionState;
 use datafusion::{
     common::exec_err,
-    execution::{
-        config::SessionConfig,
-        context::{FunctionFactory, RegisterFunction},
-    },
+    execution::context::{FunctionFactory, RegisterFunction},
     logical_expr::{
         ColumnarValue, CreateFunction, DefinitionStatement, ScalarUDF, ScalarUDFImpl, Signature,
         Volatility,
@@ -23,7 +21,7 @@ use datafusion::error::{DataFusionError, Result};
 impl FunctionFactory for JvmFunctionFactory {
     async fn create(
         &self,
-        _state: &SessionConfig,
+        _state: &SessionState,
         statement: CreateFunction,
     ) -> Result<RegisterFunction> {
         let return_type = statement.return_type.expect("return type expected");
