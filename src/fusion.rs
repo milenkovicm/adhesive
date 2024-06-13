@@ -2,12 +2,13 @@ use std::sync::Arc;
 
 use datafusion::arrow::{array::ArrayRef, datatypes::DataType};
 use datafusion::execution::context::SessionState;
+use datafusion::logical_expr::Expr;
+use datafusion::scalar::ScalarValue;
 use datafusion::{
     common::exec_err,
     execution::context::{FunctionFactory, RegisterFunction},
     logical_expr::{
-        ColumnarValue, CreateFunction, DefinitionStatement, ScalarUDF, ScalarUDFImpl, Signature,
-        Volatility,
+        ColumnarValue, CreateFunction, ScalarUDF, ScalarUDFImpl, Signature, Volatility,
     },
 };
 
@@ -33,27 +34,28 @@ impl FunctionFactory for JvmFunctionFactory {
             .map(|i| i.value.to_lowercase())
             .unwrap_or("java".to_string());
 
-        let (jvm_function, function_definition) = match (&statement.params.as_, language.as_str()) {
-            (Some(DefinitionStatement::SingleQuotedDef(java_code)), "java") => (
-                self.compile_create_function(java_code, &method_name)?,
-                FunctionDefinition::Java {
-                    class_definition: java_code.to_owned(),
-                },
-            ),
-            (Some(DefinitionStatement::SingleQuotedDef(class_name)), "class") => (
-                self.create_function(class_name, &method_name)?,
-                FunctionDefinition::Fqn {
-                    fqn: class_name.to_owned(),
-                },
-            ),
+        let (jvm_function, function_definition) =
+            match (&statement.params.function_body, language.as_str()) {
+                (Some(Expr::Literal(ScalarValue::Utf8(Some(java_code)))), "java") => (
+                    self.compile_create_function(java_code, &method_name)?,
+                    FunctionDefinition::Java {
+                        class_definition: java_code.to_owned(),
+                    },
+                ),
+                (Some(Expr::Literal(ScalarValue::Utf8(Some(class_name)))), "class") => (
+                    self.create_function(class_name, &method_name)?,
+                    FunctionDefinition::Fqn {
+                        fqn: class_name.to_owned(),
+                    },
+                ),
 
-            // Double dollar def does not work.
-            // It was intended to use for java code definition
-            // Some(DefinitionStatement::DoubleDollarDef(java_code)) => {
-            //     self.create_function(&class_name, &method_name)?
-            // }
-            _ => exec_err!("class name or class definition should be provided")?,
-        };
+                // Double dollar def does not work.
+                // It was intended to use for java code definition
+                // Some(DefinitionStatement::DoubleDollarDef(java_code)) => {
+                //     self.create_function(&class_name, &method_name)?
+                // }
+                _ => exec_err!("class name or class definition should be provided")?,
+            };
 
         let argument_types = statement
             .args
