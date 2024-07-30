@@ -7,7 +7,7 @@ use datafusion::arrow::{
 use jni::{
     objects::{GlobalRef, JMethodID, JValue},
     signature::ReturnType,
-    AttachGuard, InitArgs, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
+    InitArgs, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
 };
 use std::{
     ptr::{addr_of, addr_of_mut},
@@ -256,13 +256,20 @@ fn has_exception_occurred(env: &mut JNIEnv) -> Result<bool> {
 
 // I'm not sure what's correct approach to attach thread in this case
 // should we do it every time or make it daemon ?
-// TODO: investigate attach thread
 
+// #[inline]
+// fn _attach_tread(jvm: &JavaVM) -> std::result::Result<AttachGuard<'_>, jni::errors::Error> {
+//     jvm.attach_current_thread()
+// }
+
+// Attaching thread as a deamon (or permanently i don't think there is a big difference
+// as JVM is going to be shut down when process shuts down)
+// if attaching it temporary it makes it harder to debug (as attached thread gets new
+// name every time it is registered)
 #[inline]
-fn _attach_tread(jvm: &JavaVM) -> std::result::Result<AttachGuard<'_>, jni::errors::Error> {
-    jvm.attach_current_thread()
+fn _attach_tread(jvm: &JavaVM) -> std::result::Result<JNIEnv, jni::errors::Error> {
+    jvm.attach_current_thread_as_daemon()
 }
-
 #[cfg(test)]
 mod test {
 
