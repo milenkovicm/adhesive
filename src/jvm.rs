@@ -10,6 +10,7 @@ use jni::{
     InitArgs, InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
 };
 use std::{
+    fmt::Debug,
     ptr::{addr_of, addr_of_mut},
     sync::Arc,
 };
@@ -32,6 +33,7 @@ static COMPILER_CLASS_NAME: &str = "com/github/milenkovicm/adhesive/Compiler";
 /// compiler method
 static COMPILER_METHOD_NAME: &str = "compile";
 
+#[derive(Debug)]
 pub struct JvmFunctionFactory {
     // TODO: we should start VM lazily
     //      when first function is created
