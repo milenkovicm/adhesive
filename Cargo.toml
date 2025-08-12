@@ -18,5 +18,5 @@ datafusion = { version = "46.0", features = ["pyarrow"] }
 async-trait = { version = "0.1" }
 
 [dev-dependencies]
-ctor = { version = "0.4"}
+ctor = { version = "0.5"}
 env_logger = { version = "0.11" }
